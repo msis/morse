@@ -12,6 +12,7 @@ if(COMMAND cmake_policy)
 	endif()
 endif()
 
+set(CMAKE_C_STANDARD 99)
 
 option(BUILD_CORE_SUPPORT "Build and install morse core" ON)
 option(BUILD_DOC_SUPPORT "Build and install morse documentation (Requiere Sphinx)" OFF)
@@ -20,11 +21,14 @@ option(BUILD_YARP_SUPPORT "Build yarp framework support" ON)
 option(BUILD_ROS_SUPPORT "Build ROS middleware support" ON)
 option(BUILD_MOOS_SUPPORT "Build MOOS middleware support" ON)
 option(BUILD_MAVLINK_SUPPORT "Build Mavlink middleware support" ON)
+option(BUILD_PPRZLINK_SUPPORT "Build Pprzlink middleware support" ON)
 option(BUILD_HLA_SUPPORT "Build HLA middleware support. Also used for distributed HLA simulation." ON)
 option(PYMORSE_SUPPORT "Build and install the Python bindings for MORSE." ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config/)
-find_package(PkgConfig REQUIRED)
+IF(NOT WIN32)
+    find_package(PkgConfig REQUIRED)
+endif(NOT WIN32)
 
 set(PythonInterp_FIND_VERSION 3.3)
 find_package(PythonInterp REQUIRED)
@@ -237,6 +241,7 @@ ELSE()
 									   ${CMAKE_CURRENT_SOURCE_DIR}/doc/man
         								   ${SPHINX_MAN_OUTPUT} &&
 						  ${GZIP} -f ${SPHINX_MAN_OUTPUT}/*.1)
+		ADD_DEPENDENCIES(man revisiontag)
 		INSTALL(FILES ${SPHINX_MAN_OUTPUT}/morse.1.gz 
 					  ${SPHINX_MAN_OUTPUT}/morse-run.1.gz 
 					  ${SPHINX_MAN_OUTPUT}/morse-create.1.gz 

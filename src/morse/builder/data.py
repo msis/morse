@@ -41,6 +41,7 @@ MORSE_DATASTREAM_MODULE = {
     'moos': 'morse.middleware.moos_datastream.MOOSDatastreamManager',
     'hla': 'morse.middleware.hla_datastream.HLADatastreamManager',
     'mavlink': 'morse.middleware.mavlink_datastream.MavlinkDatastreamManager',
+    'pprzlink': 'morse.middleware.pprzlink_datastream.PprzlinkDatastreamManager',
 }
 
 MORSE_MODIFIER_DICT = {
@@ -182,8 +183,15 @@ MORSE_DATASTREAM_DICT = {
         },
     "morse.sensors.depth_camera.DepthCameraRotationZ": {
         "default": {
+            "socket": 'morse.middleware.sockets.depth_camera.DepthCameraPublisher',
             "ros": 'morse.middleware.ros.depth_camera.DepthCameraPublisher',
             'pocolibs': 'morse.middleware.pocolibs.sensors.velodyne.Velodyne3DImage'
+            }
+        },
+    "morse.sensors.depth_camera_aggregator.DepthCameraAggregator": {
+        "default": {
+            "socket": 'morse.middleware.sockets.depth_camera.DepthCameraPublisher',
+            "ros": 'morse.middleware.ros.depth_camera.DepthCameraPublisher',
             }
         },
     "morse.sensors.gps.GPS": {
@@ -413,7 +421,7 @@ MORSE_DATASTREAM_DICT = {
             "ros": 'morse.middleware.ros.force_torque.WrenchReader',
             }
         },
-    "morse.actuators.externalForce.ExternalForce": {
+    "morse.actuators.external_force.ExternalForce": {
         "default": {
             "socket": INTERFACE_DEFAULT_IN,
             "yarp": INTERFACE_DEFAULT_IN,
@@ -527,7 +535,8 @@ MORSE_DATASTREAM_DICT = {
             "ros": 'morse.middleware.ros.read_pose.PoseReader',
             "socket": INTERFACE_DEFAULT_IN,
             "yarp": INTERFACE_DEFAULT_IN,
-            "moos" : 'morse.middleware.moos.pose.PoseReader'
+            "moos" : 'morse.middleware.moos.pose.PoseReader',
+            "pprzlink" : 'morse.middleware.pprzlink.set_rotorcraft_pose.RotorcraftPose'
             }
         },
     "morse.actuators.waypoint.Waypoint": {

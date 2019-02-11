@@ -121,7 +121,7 @@ class Component(AbstractComponent):
 
     cf. `bpy.ops.wm.link_append` and `bpy.data.libraries.load`
     """
-    def __init__(self, category='', filename='', make_morseable=True):
+    def __init__(self, category='', filename='',blender_object_name=None, make_morseable=True):
         """ Initialize a MORSE component
 
         :param category: The category of the component (folder in
@@ -129,11 +129,24 @@ class Component(AbstractComponent):
         :param filename: The name of the component (file in
             MORSE_COMPONENTS/category/name.blend) If ends with '.blend',
             append the objects from the Blender file.
+        :param blender_object_name: If set, use the given Blender object 
+            as 'root' for this component. Otherwise, select the first
+            available Blender object (the top parent in case of a hierarchy
+            of objects).
         :param make_morseable: If the component has no property for the
             simulation, append default Morse ones. See self.morseable()
         """
         AbstractComponent.__init__(self, filename=filename, category=category)
-        imported_objects = self.append_meshes()
+
+
+        if blender_object_name is None:
+            imported_objects = self.append_meshes()
+        else:
+            imported_objects = self.append_meshes(objects=[blender_object_name])
+            if not imported_objects:
+                raise MorseBuilderNoComponentError("No object named <%s> in %s" % (blender_object_name, filename))
+
+        
         # Here we use the fact that after appending, Blender select the objects
         # and the root (parent) object first ( [0] )
         self.set_blender_object(imported_objects[0])
@@ -144,8 +157,19 @@ class Component(AbstractComponent):
 
 
 class Robot(Component):
-    def __init__(self, filename = '', name = None):
-        Component.__init__(self, 'robots', filename)
+    def __init__(self, filename='', name=None, blender_object_name=None):
+        """ Initialize a MORSE robot
+
+        :param filename: The name of the component (file in
+            MORSE_COMPONENTS/category/name.blend) If ends with '.blend',
+            append the objects from the Blender file.
+        :param name: Name of the resulting robot in the simulation, default to 'robot'.
+        :param blender_object_name: If set, use the given Blender object 
+            in 'filename' as 'root' for this robot. Otherwise, select the first
+            available Blender object (the top parent in case of a hierarchy
+            of objects).
+        """
+        Component.__init__(self, 'robots', filename, blender_object_name=blender_object_name)
         self.properties(Robot_Tag = True)
         self.default_interface = None
         if name:
@@ -241,13 +265,13 @@ class Robot(Component):
 
 
 class GroundRobot(Robot):
-    def __init__(self, filename, name):
-        Robot.__init__(self, filename, name)
+    def __init__(self, filename, name, blender_object_name=None):
+        Robot.__init__(self, filename, name, blender_object_name=blender_object_name)
         self.properties(GroundRobot = True)
 
 class WheeledRobot(GroundRobot):
-    def __init__(self, filename, name):
-        Robot.__init__(self, filename, name)
+    def __init__(self, filename, name, blender_object_name=None):
+        Robot.__init__(self, filename, name, blender_object_name=blender_object_name)
 
     def unparent_wheels(self):
         """ Make the wheels orphans, but keep the transformation applied to

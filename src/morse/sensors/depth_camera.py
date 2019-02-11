@@ -20,6 +20,7 @@ class AbstractDepthCamera(VideoCamera):
         # Call the constructor of the VideoCamera class
         VideoCamera.__init__(self, obj, parent)
         # Component specific initialize (converters)
+        self.pts = None
         self.initialize()
 
     # abstractmethod
@@ -66,18 +67,32 @@ class DepthCamera(AbstractDepthCamera):
     add_data('nb_points', 0, 'int', "the number of points found in the "
              "points list. It must be inferior to cam_width * cam_height")
 
+    add_property('_keep_list', None, 'keep_list', 'list(int)',
+"a list of lines number we preserve. Other lines are discared. It allows to "
+"better simulate sparse sensor such as velodyne. If not specified, keep the "
+"image dense")
+
+    add_property('_keep_resolution', False, 'keep_resolution', 'boolean',
+    "By default the clipping of the camera removes unreals points"
+    "This option allows adding dummy points (0,0,0) for keeping the sensor resolution")
+
     def initialize(self):
         from morse.sensors.zbufferto3d import ZBufferTo3D
+        if self._keep_list is None:
+            keep_list = list(range(self.image_height))
+        else:
+            keep_list = eval(self._keep_list)
         # Store the camera parameters necessary for image processing
         self.converter = ZBufferTo3D(self.local_data['intrinsic_matrix'][0][0],
                                      self.local_data['intrinsic_matrix'][1][1],
                                      self.near_clipping, self.far_clipping,
-                                     self.image_width, self.image_height)
+                                     self.image_width, self.image_height, self._keep_resolution,
+                                     keep_list)
 
     def process_image(self, image):
-        pts = self.converter.recover(image)
-        self.local_data['points'] = pts
-        self.local_data['nb_points'] = int(len(pts) / 12)
+        self.pts = self.converter.recover(image)
+        self.local_data['points'] = self.pts
+        self.local_data['nb_points'] = int(len(self.pts) / 12)
 
 
 class DepthVideoCamera(AbstractDepthCamera):

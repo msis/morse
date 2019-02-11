@@ -74,7 +74,7 @@ class IMU(SensorCreator):
         mesh.scale = (.04, .04, .02)
         mesh.color(.3, .9, .6)
         self.append(mesh)
-    
+
 class Magnetometer(SensorCreator):
     _classpath = "morse.sensors.magnetometer.Magnetometer"
 
@@ -434,6 +434,26 @@ class DepthCamera(VideoCamera):
         self.properties(cam_near=1.0, cam_far=20.0, retrieve_depth=True,
                         Vertical_Flip=False)
 
+class DepthCameraAggregator(SensorCreator):
+    _classpath = "morse.sensors.depth_camera_aggregator.DepthCameraAggregator"
+
+    def __init__(self, name=None):
+        SensorCreator.__init__(self, name)
+        self.master = None
+        self.cameras_ = []
+
+    def set_master(self, master):
+        self.master = master
+
+    def append(self, cam):
+        self.cameras_.append(cam)
+        SensorCreator.append(self, cam)
+
+    @property
+    def cameras(self):
+        return self.cameras_
+
+
 class Velodyne(DepthCamera):
     _classpath = "morse.sensors.depth_camera.DepthCameraRotationZ"
     _blendname = "velodyne"
@@ -446,6 +466,33 @@ class Velodyne(DepthCamera):
         self.mesh.rotation_euler.x = math.pi / 2
         self.mesh.rotation_euler.y = -math.pi / 2
         self.mesh.scale = [1.1]*3
+
+
+class VLP16_180(DepthCameraAggregator):
+    _blendname = "velodyne"
+
+    def __init__(self, name=None):
+        DepthCameraAggregator.__init__(self, name)
+        for i in range(3):
+            cam = DepthCamera("cam%i"%i)
+            """
+            cam_focal = 27.7 => hfov ~= 60.0.
+            As cam_height is half the cam_width, vfov ~= 30.0, so each pixel represent around 0.117°
+            Hence, the keep_list is a reasonnably fair approximation of the real angle of VLP16
+            """
+            cam.properties(cam_width=512, cam_height=256, cam_focal = 27.7,
+                           keep_list=str([1, 17, 34, 51, 68, 85, 102, 120, 137, 154, 171, 188, 205, 222, 239, 255]),
+                           keep_resolution=True)
+            cam.rotate(x=(i-1) * math.pi / 3)
+            cam.frequency(10)
+            cam.hide_mesh()
+            self.append(cam)
+
+        # self.append_meshes(['VelodyneMesh'])
+        self.set_master(1)
+
+    def after_renaming(self):
+        SensorCreator.properties(self, master_camera = self.cameras[self.master].name)
 
 
 VelodyneZB = Velodyne # morse 1.1 compatible
